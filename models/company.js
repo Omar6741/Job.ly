@@ -17,6 +17,7 @@ class Company {
    * */
 
   static async create({ handle, name, description, numEmployees, logoUrl }) {
+    //user must be logged in AND an admin in order to access this function.
     const duplicateCheck = await db.query(
           `SELECT handle
            FROM companies
@@ -49,22 +50,33 @@ class Company {
    * Returns [{ handle, name, description, numEmployees, logoUrl }, ...]
    * */
 
-  static async findAll() {
-    const companiesRes = await db.query(
-          `SELECT handle,
-                  name,
-                  description,
-                  num_employees AS "numEmployees",
-                  logo_url AS "logoUrl"
-           FROM companies
-           ORDER BY name`);
+  static async findAll(name = '', min=0, max=0) {
+    //checks to see whether a parameter or parameters have been passed.
+    let whereClause = '';
+    //if both a max and min number are passed, we run a search query with both of them.
+    if(max !== 0 && min !== 0){
+      whereClause = `WHERE num_employees >= ${min} AND num_employees <= ${max}`;
+    }
+    //If only a min number is passed, our whereClause only contains the min check in the query.
+    else if(min !== 0){
+      whereClause = `WHERE num_employees >= ${min}`;
+    }
+    else if(max !== 0){
+      whereClause = `WHERE num_employees <= ${max}`;
+    }
+    //If a name is passed and whereClause has a min or max(is not empty), we add the LIKE name(to find all names with that parameter in it) to our request.
+    if(name !== '' && whereClause !== ''){
+      whereClause += `AND lower(name) LIKE lower('%${name}%')`;
+    }
+    //is name is passed and there is no min/max, our whereClause only searches with the name parameter
+    else if(name !== '' && whereClause === ''){
+      whereClause = `WHERE lower(name) LIKE lower('%${name}%')`;
+    }
+    const companiesQuery = `SELECT handle, name, description, num_employees AS "numEmployees",
+    logo_url AS "logoUrl" FROM companies ${whereClause} ORDER by name`;
+    
+    const companiesRes = await db.query(companiesQuery);
 
-    if(numEmployees < minEmployees){
-      throw new Error("Does not meet minEmployees requirement")
-    }
-    if(numEmployees > maxEmployees){
-      throw new Error("Number of employees is too high");
-    }
     return companiesRes.rows;
   }
 
@@ -107,6 +119,10 @@ class Company {
    */
 
   static async update(handle, data) {
+    //if user is not an admin, throw error "user cannot update data"
+    if(user.is_admin === 'f'){
+      throw new Error("User cannot update data");
+    }
     const { setCols, values } = sqlForPartialUpdate(
         data,
         {
