@@ -10,8 +10,8 @@ const { ensureLoggedIn } = require("../middleware/auth");
 const { ensureAdmin } = require("../middleware/auth");
 const Job = require("../models/job");
 
-const companyNewSchema = require("../schemas/companyNew.json");
-const companyUpdateSchema = require("../schemas/companyUpdate.json");
+const jobNewSchema = require("../schemas/jobNew.json");
+const jobUpdateSchema = require("../schemas/jobUpdate.json");
 
 const router = new express.Router();
 
@@ -27,13 +27,15 @@ const router = new express.Router();
 
 router.post("/", ensureAdmin, async function (req, res, next) {
   try {
-    const validator = jsonschema.validate(req.body, companyNewSchema);
+    const validator = jsonschema.validate(req.body, jobNewSchema);
     if (!validator.valid) {
+      console.log("JSON schema fail");
       const errs = validator.errors.map(e => e.stack);
       throw new BadRequestError(errs);
     }
-
+    console.log("JSON schema did not fail");
     const job = await Job.create(req.body);
+    console.log("Created job", job);
     return res.status(201).json({ job });
   } catch (err) {
     return next(err);
@@ -53,11 +55,11 @@ router.post("/", ensureAdmin, async function (req, res, next) {
 
 router.get("/", async function (req, res, next) {
   try {
-    const name = req.query.name;
-    const min = req.query.minEmployees;
-    const max = req.query.maxEmployees;
-    const companies = await Company.findAll(name, min, max);
-    return res.json({ companies });
+    // const title = req.body.title;
+    // const min = req.body.min;
+    // const hasEquity = req.body.hasEquity;
+    const jobs = await Job.findAll();
+    return res.json({ jobs });
   } catch (err) {
     return next(err);
   }
@@ -93,14 +95,14 @@ router.get("/:handle", async function (req, res, next) {
 
 router.patch("/:handle", ensureAdmin, async function (req, res, next) {
   try {
-    const validator = jsonschema.validate(req.body, companyUpdateSchema);
+    const validator = jsonschema.validate(req.body, jobUpdateSchema);
     if (!validator.valid) {
       const errs = validator.errors.map(e => e.stack);
       throw new BadRequestError(errs);
     }
 
-    const company = await Company.update(req.params.handle, req.body);
-    return res.json({ company });
+    const job = await Job.update(req.params.handle, req.body);
+    return res.json({ job });
   } catch (err) {
     return next(err);
   }
