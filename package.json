@@ -31,5 +31,13 @@
   },
   "devDependencies": {
     "supertest": "^5.0.0-0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Omar6741/Job.ly.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Omar6741/Job.ly/issues"
+  },
+  "homepage": "https://github.com/Omar6741/Job.ly#readme"
 }
